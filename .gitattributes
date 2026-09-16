@@ -1,0 +1,8 @@
+# Les scripts bash doivent rester en LF même clonés depuis Windows
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.md   text eol=lf
+*.html text eol=lf
+.env.example text eol=lf

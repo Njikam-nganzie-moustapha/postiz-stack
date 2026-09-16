@@ -1,0 +1,140 @@
+# Postiz — stack allégée pour un PC personnel exposé via Tailscale Funnel.
+# Dérivé du compose officiel (gitroomhq/postiz-docker-compose) :
+#   - supprimés : temporal-elasticsearch, temporal-admin-tools, spotlight
+#   - temporal-ui gardé sous le profil "debug" (docker compose --profile debug up)
+#   - toutes les données dans ./data/ (bind mounts), pas de volumes nommés
+#   - l'app n'écoute que sur 127.0.0.1 : seul Tailscale Funnel l'expose en HTTPS
+
+services:
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: postiz
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:${POSTIZ_PORT:-4007}:5000"
+    volumes:
+      - ./data/config:/config
+      - ./data/uploads:/uploads
+    networks:
+      - postiz-network
+      - temporal-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "const r=require('http').get('http://localhost:5000/',res=>process.exit(res.statusCode<500?0:1));r.on('error',()=>process.exit(1));r.setTimeout(4000,()=>{r.destroy();process.exit(1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: postiz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postiz-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postiz-password}
+      POSTGRES_DB: ${POSTGRES_DB:-postiz-db-local}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - postiz-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postiz-user} -d ${POSTGRES_DB:-postiz-db-local}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  postiz-redis:
+    image: redis:7.2
+    container_name: postiz-redis
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - postiz-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ---------------------------------------------------------------
+  # Temporal (moteur de planification, obligatoire depuis Postiz 2.12)
+  # Sans Elasticsearch : ENABLE_ES=false, la visibilité passe par Postgres.
+  # ---------------------------------------------------------------
+  temporal-postgresql:
+    image: postgres:17-alpine
+    container_name: temporal-postgresql
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+    volumes:
+      - ./data/temporal-postgres:/var/lib/postgresql/data
+    networks:
+      - temporal-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  temporal:
+    image: temporalio/auto-setup:1.28.1
+    container_name: temporal
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7233:7233"
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=temporal-postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=false
+      - TEMPORAL_NAMESPACE=default
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
+    networks:
+      - temporal-network
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "temporal:7233"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      temporal-postgresql:
+        condition: service_healthy
+
+  # Interface de debug Temporal — ne démarre qu'avec : docker compose --profile debug up -d
+  temporal-ui:
+    image: temporalio/ui:2.34.0
+    container_name: temporal-ui
+    profiles: [debug]
+    restart: unless-stopped
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://127.0.0.1:3000
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - temporal-network
+    depends_on:
+      temporal:
+        condition: service_healthy
+
+networks:
+  postiz-network:
+  temporal-network:

@@ -1,0 +1,14 @@
+# Secrets et données locales — ne quittent jamais ce PC
+.env
+data/
+backups-repo/
+
+# Dumps en clair (temporaires, uniquement pendant backup/restore)
+*.dump
+*.sql
+*.tmp
+secrets.env
+
+# Système
+Thumbs.db
+.DS_Store
