@@ -13,7 +13,7 @@ Write-Host @"
 
   Postiz — configuration initiale
   ==============================
-  Poids à prévoir : ~1,4 GB à télécharger, 3,5-4 GB sur disque, ~1,5 GB de RAM en marche.
+  Poids à prévoir : ~1,4 GB à télécharger, ~7 GB sur disque, ~1,5 GB de RAM en marche.
 
 "@ -ForegroundColor White
 

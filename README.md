@@ -18,7 +18,7 @@ TikTok et Instagram ne reçoivent pas ta vidéo : ils viennent **la chercher** �
 | temporal-ui | interface de debug du moteur | désactivée (`docker compose --profile debug up` pour l'ouvrir) |
 | temporal-admin-tools, spotlight | outils développeur | retirés |
 
-**Poids** : ~1,4 GB à télécharger la première fois, 3,5–4 GB sur disque, ~1,5 GB de RAM quand ça tourne.
+**Poids** (mesuré) : ~1,4 GB à télécharger la première fois, **~7 GB sur disque** une fois décompressé (l'image Postiz seule fait 5,7 GB), ~1,5 GB de RAM quand ça tourne.
 
 ## Prérequis
 
