@@ -38,7 +38,7 @@ Dans la [console Tailscale](https://login.tailscale.com/admin) :
 ## Installation (une seule fois)
 
 ```powershell
-git clone https://github.com/njikammoustapha67/postiz-stack.git
+git clone https://github.com/Njikam-nganzie-moustapha/postiz-stack.git
 cd postiz-stack
 powershell -ExecutionPolicy Bypass -File scripts\setup.ps1     # Linux/macOS : bash scripts/setup.sh
 ```
