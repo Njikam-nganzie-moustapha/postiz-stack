@@ -117,6 +117,8 @@ Le chiffrement tourne dans un conteneur `alpine/openssl` : rien à installer sur
 
 ## Dépannage
 
+Tout ce qui a été constaté en construisant ce dépôt (faits vérifiés, poids mesurés, pièges, guide de debug pas à pas) est dans **[docs/REALITES-ET-DEBUG.md](docs/REALITES-ET-DEBUG.md)**. Commence par là, et note-y chaque nouvelle découverte.
+
 ```powershell
 docker compose logs -f postiz          # logs de l'app
 docker compose ps                      # état des 5 conteneurs
